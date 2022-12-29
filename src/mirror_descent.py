@@ -81,6 +81,9 @@ def seg(
     theta = np.zeros(shape=(2 * d, 1))
     w = np.full(shape=(2 * d, 1), fill_value=1 / (2 * d))
 
+    m = x
+    accuracies.append(accuracy(m, a_test,  b_test))
+
     for n in range(n_epochs):
         index = np.random.randint(low=0, high=n_samples, size=(1,))
 
@@ -92,3 +95,14 @@ def seg(
         grad = hinge_loss_derivative(x, a_train[index], b_train[index])
         theta[:d] = theta[:d] - lr * grad
         theta[d:] = theta[d:] + lr * grad
+
+        w = np.exp(theta) / np.sum(np.exp(theta))
+
+        x = z * (w[:d] - w[d:])
+        m = (n * m + x) / (n + 1)
+
+        if (n + 1) % (n_epochs // 100) == 0:
+            acc = accuracy(m, a_test, b_test)
+            accuracies.append(acc)
+
+    return m, accuracies
