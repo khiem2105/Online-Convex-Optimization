@@ -1,13 +1,23 @@
 import numpy as np
-from math import sqrt
 
-from commons import accuracy, projection_l1_ball, projection_l1_ball_weighted_norm, general_projection_l1_ball, hinge_loss_derivative
+from commons import accuracy, general_projection_l1_ball, hinge_loss_derivative
 
 def ons(
     train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
     test_data_path: str="../data/test_data.npy", test_label_path: str="../data/test_labels.npy", 
     z: float=100, lambda_: float=1/3, gamma: float=1/8, n_epochs: int=10000
 ):
+    """
+    Online Newton Step
+    
+    Params:
+    train_data_path, train_label_path: path to train data and train label file
+    test_data_path, test_label_path: path to test data and test label file
+    z: l1 ball radius
+    lambda_: regularization coef
+    gamma: gamma coef
+    n_epochs: max epochs
+    """
     a_train = np.load(train_data_path)
     b_train = np.load(train_label_path)
 
