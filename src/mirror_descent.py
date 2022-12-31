@@ -1,7 +1,7 @@
 import numpy as np
 from math import sqrt
 
-from commons import accuracy, projection_l1_ball, hinge_loss_derivative
+from commons import accuracy, projection_l1_ball, projection_l1_ball_weighted_norm, hinge_loss_derivative
 
 def smd(
     train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
@@ -99,6 +99,46 @@ def seg(
         w = np.exp(theta) / np.sum(np.exp(theta))
 
         x = z * (w[:d] - w[d:])
+        m = (n * m + x) / (n + 1)
+
+        if (n + 1) % (n_epochs // 100) == 0:
+            acc = accuracy(m, a_test, b_test)
+            accuracies.append(acc)
+
+    return m, accuracies
+
+def ada_grad(
+    train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
+    test_data_path: str="../data/test_data.npy", test_label_path: str="../data/test_labels.npy", 
+    z: float=100, n_epochs: int=10000
+):
+    a_train = np.load(train_data_path)
+    b_train = np.load(train_label_path)
+
+    a_test = np.load(test_data_path)
+    b_test = np.load(test_label_path)
+
+    n_samples, d = a_train.shape
+
+    accuracies = []
+
+    x = np.zeros(shape=(d, 1))
+    y = np.zeros(shape=(d, 1))
+    s = np.ones(shape=(d, 1)) * 0.000001
+    
+    m = s
+    accuracies.append(accuracy(m, a_test, b_test))
+
+    for n in range(n_epochs):
+        index = np.random.randint(low=0, high=n_samples, size=(1,))
+
+        grad = hinge_loss_derivative(x, a_train[index], b_train[index])
+        s = s + grad ** 2
+        d = np.sqrt(s)
+        d_inverse = 1 / np.sqrt(s)
+        y = x - d_inverse * grad
+        x = projection_l1_ball_weighted_norm(y, d, z)
+
         m = (n * m + x) / (n + 1)
 
         if (n + 1) % (n_epochs // 100) == 0:

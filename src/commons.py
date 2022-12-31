@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import minimize
 
 def hinge_loss_regularized_derivative(x: np.ndarray, a: np.ndarray, b: np.ndarray, lambda_: float):
     """
@@ -53,19 +54,54 @@ def projection_simplex(x: np.ndarray):
         return x
 
     # Sort the coordinate in descending order
-    x_sorted = np.sort(x)
+    x_sorted = np.sort(x, axis=0)[::-1]
 
     # Find the breakpoint
     d = 1
     while d < x.shape[0]:
-        sum_ = np.sum(x_sorted[:d]) - x_sorted[d]
-        if sum_ > 1:
+        sum_ = (np.sum(x_sorted[:d]) - 1) / d
+        if sum_ > x_sorted[d]:
             break
         d += 1
     
     theta = (1 / d) * (np.sum(x_sorted[:d]) - 1)
     
     return soft_threshold(x, theta)
+
+def projection_simplex_weighted_norm(x: np.ndarray, D: np.ndarray):
+    """
+    Function to project a point onto the unit simplew with respect to
+    the weighted norm D
+
+    Params:
+    x: the point of shape (d x 1) to project
+    D: the diagonal weight matrix of shape (d x d)
+    """
+    # Check if x is already in the simplex
+    if np.sum(x) == 1:
+        return x
+    
+    # Sort the coordinate of Dx
+    d_x = D * x
+    ind = d_x.argsort(axis=0)[::-1]
+    d_x_sorted = d_x[ind]
+    x_sorted = x[ind]
+
+    # calculate the diagonal of the inverse of D
+    d_inversed = (1 / D)
+    d_inversed_sorted = d_inversed[ind]
+
+    # Find the breakpoint
+    d = 1
+    while d < x.shape[0]:
+        sum_ =  (np.sum(x_sorted[:d]) - 1) / np.sum(d_inversed_sorted[:d])
+        if sum_ > d_x_sorted[d]:
+            break        
+        d += 1
+
+    theta = 1 / (np.sum(d_inversed_sorted[:d])) * (np.sum(x_sorted[:d]) - 1)
+
+    return d_inversed * soft_threshold(d_x, theta)
 
 def projection_l1_ball(x: np.ndarray, z: float):
     """
@@ -74,15 +110,54 @@ def projection_l1_ball(x: np.ndarray, z: float):
     Params:
     x: the point of shape (d x 1)
     z: radius of the ball
-    """ 
+    """
     # Check if x is in the ball or not
     if np.linalg.norm(x, ord=1) <= z:
         return x
     
     # Compute the projection onto the simplex
     x_ = projection_simplex(np.abs(x) / z)
+    # Assert that x is in the simpelx
+    # print(np.sum(x_))
     
     return np.sign(x) * x_ * z
+
+def projection_l1_ball_weighted_norm(x: np.ndarray, D: np.ndarray, z: float):
+    """
+    Function to project a point into the l1 ball of radius z
+
+    Params:
+    x: the point of shape (d x 1)
+    D: the diagonal weight matrix
+    z: radius of the ball
+    """
+    # Check if x is in the ball or not
+    if np.linalg.norm(x, ord=1) <= z:
+        return x
+
+    # Compute the projection onto the simplex
+    x_ = projection_simplex_weighted_norm(np.abs(x) / z, D)
+    # Assert that x is in the simplex
+    # print(np.sum(x_))
+    
+    return np.sign(x) * x_ * z
+
+def general_projection_l1_ball(y: np.ndarray, D: np.ndarray, z: float):
+    def obj_func(x, y, D):
+        return 0.5 * np.dot(np.dot((x - y).T, D), (x - y))[0, 0]
+
+    cons = ({
+        "type": "ineq", "fun": lambda x: z - np.sum(np.abs(x)) 
+    })
+
+    result = minimize(
+        obj_func,
+        np.ones(shape=y.shape) / y.shape[0],
+        (y, D),
+        constraints=cons
+    )
+
+    return result.x[:, None]
 
 def accuracy(x: np.ndarray, a_test: np.ndarray, b_test: np.ndarray):
     """
