@@ -6,7 +6,7 @@ from commons import accuracy, projection_l1_ball, projection_l1_ball_weighted_no
 def smd(
     train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
     test_data_path: str="../data/test_data.npy", test_label_path: str="../data/test_labels.npy", 
-    z: float=1, n_epochs: int=10000
+    z: float=100, n_epochs: int=10000
 ):
     """
     Stochastic mirror descent
@@ -32,6 +32,7 @@ def smd(
     y = np.zeros(shape=(d, 1))
 
     m = x
+    accuracies.append(accuracy(m, a_test, b_test))
 
     for n in range(n_epochs):
         index = np.random.randint(low=0, high=n_samples, size=(1,))
@@ -56,7 +57,7 @@ def smd(
 def seg(
     train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
     test_data_path: str="../data/test_data.npy", test_label_path: str="../data/test_labels.npy", 
-    z: float=1, n_epochs: int=10000
+    z: float=100, n_epochs: int=10000
 ):
     """
     Stochastic Exponentiated Gradient Descent

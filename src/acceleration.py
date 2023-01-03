@@ -1,6 +1,6 @@
 import numpy as np
 
-from commons import accuracy, general_projection_l1_ball, hinge_loss_derivative
+from commons import accuracy, projection_l1_ball_weighted_norm, hinge_loss_derivative
 
 def ons(
     train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
@@ -42,10 +42,12 @@ def ons(
         grad = hinge_loss_derivative(x, a_train[index], b_train[index])
         delta = grad + lambda_ * x
         A = A + np.dot(delta, delta.T)
-        A_inversed = A_inversed - (np.dot(np.dot(np.dot(A_inversed, delta), delta.T), A_inversed)) / \
-                                  (1 + np.dot(np.dot(delta.T, A_inversed), delta))
+        # A_inversed = A_inversed - (np.dot(np.dot(np.dot(A_inversed, delta), delta.T), A_inversed)) / \
+        #                           (1 + np.dot(np.dot(delta.T, A_inversed), delta))
+        A_inversed = np.linalg.inv(A)
         y = x - (1 / gamma) * np.dot(A_inversed, delta)
-        x = general_projection_l1_ball(y, A, z)
+        diag_A = np.diag(A)[:, None]
+        x = projection_l1_ball_weighted_norm(y, diag_A, z)
 
         m = (n * m + x) / (n + 1)
 

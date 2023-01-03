@@ -1,0 +1,2 @@
+The main.py file contains the code ready to run and at the end it will show the performance of all the algorithms studied in the project.
+To run it, make sure you have Numpy, Matplotlib and Pandas installed on your machine. Then download and store the .csv data file in an outside folder data/. Run preprocess.ipynb to obtain the Numpy format necessaire for the code to run.

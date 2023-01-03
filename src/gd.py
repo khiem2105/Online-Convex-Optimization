@@ -47,7 +47,7 @@ def gd(train_data_path: str="../data/train_data.npy", train_label_path: str="../
 def sgd(
     train_data_path: str="../data/train_data.npy", train_label_path: str="../data/train_labels.npy", 
     test_data_path: str="../data/test_data.npy", test_label_path: str="../data/test_labels.npy", 
-    lambda_: float=1/3, z: float=1, n_epochs: int=10000, projected: bool=False, sqrt_lr: bool=False
+    lambda_: float=1/3, z: float=100, n_epochs: int=10000, projected: bool=False, sqrt_lr: bool=False
 ):
     """
     Stochastic unconstrained gradient descent
@@ -74,6 +74,7 @@ def sgd(
 
     x = np.zeros(shape=(d, 1))
     m = x
+    accuracies.append(accuracy(m, a_test, b_test))
 
     for n in range(n_epochs):
         index = np.random.randint(low=0, high=n_samples, size=(1,))
